@@ -33,7 +33,7 @@ except Exception as e: # More specific error catching might be better
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'scribex.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/img/<path:filename>')
 def serve_image(filename):
