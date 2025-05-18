@@ -7,22 +7,23 @@
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      height: 100%; /* For html */
+    }
+    body {
+      height: 100vh; /* For body, use viewport height */
+      display: flex;
+      flex-direction: column;
       background-color: #f7f8d2;
       background-image: url("img/beige-paper.png");
     }
-    body {
-      display: flex;
-      flex-direction: column;
-    }
     textarea {
       width: 100%;
-      flex: 1;
+      flex: 1; /* Takes up available space */
       border: none;
       resize: none;
       outline: none;
       padding: 20px 20px 0 20px;
-      margin-bottom: 20px;
+      /* margin-bottom: 20px; REMOVED as flex will manage space */
       box-sizing: border-box;
       font-family: 'Courier New', monospace;
       font-size: 16px;
@@ -31,6 +32,20 @@
       background-color: transparent;
       scrollbar-width: thin;
       scrollbar-color: rgba(0,0,0,0.2) transparent;
+    }
+    #llm-output {
+      display: none; /* Initially hidden */
+      width: 100%;
+      background-color: #eef0c3;
+      padding: 10px;
+      border-top: 1px solid #a0a0a0;
+      min-height: 30px;
+      max-height: 30vh; /* Max height for the output area */
+      overflow-y: auto;   /* Scroll if content exceeds max-height */
+      white-space: pre-wrap;
+      font-size: 0.9em;
+      box-sizing: border-box;
+      flex-shrink: 0; /* Don't shrink if textarea is small */
     }
     .footer {
       width: 100%;
@@ -42,6 +57,7 @@
       background-color: #fcfbee;
       border-top: 1px solid #a0a0a0;
       gap: 10px;
+      flex-shrink: 0; /* Footer should not shrink */
     }
     select {
       border-radius: 0;
@@ -60,6 +76,7 @@
 </head>
 <body>
   <textarea id="editor" name="editor_content" autofocus></textarea>
+  <div id="llm-output"></div> <!-- Moved before footer, initially hidden -->
   <div class="footer">
     <select hx-on:change="document.getElementById('editor').style.fontFamily = this.value">
       <option value="'Courier New', monospace">Courier</option>
@@ -71,9 +88,47 @@
       <option value="16px" selected>16px</option>
       <option value="20px">20px</option>
     </select>
-    <button hx-post="/process_text" hx-include="#editor" hx-target="this" hx-swap="outerHTML">
+    <button id="process-text-btn" hx-post="/process_text" hx-include="#editor" hx-target="#llm-output" hx-swap="innerHTML">
       Process Text
     </button>
   </div>
+
+  <script>
+    document.addEventListener('htmx:afterSwap', function(event) {
+      if (event.detail.target.id === 'llm-output') {
+        const outputDiv = event.detail.target;
+        if (outputDiv.innerHTML.trim() !== '') {
+          outputDiv.style.display = 'block';
+          // Optional: scroll to the output div if it's out of view
+          // outputDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          outputDiv.style.display = 'none'; // Hide if empty (e.g. error cleared)
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const processButton = document.getElementById('process-text-btn');
+      if (processButton) { // Ensure the button exists
+        const originalButtonText = processButton.innerHTML;
+
+        processButton.addEventListener('htmx:beforeRequest', function(evt) {
+          // Check if the event is specifically for this button's request
+          if (evt.detail.elt === this) {
+            this.disabled = true;
+            this.innerHTML = 'Processing...'; 
+          }
+        });
+
+        processButton.addEventListener('htmx:afterRequest', function(evt) {
+          // Check if the event is specifically for this button's request
+          if (evt.detail.elt === this) {
+            this.disabled = false;
+            this.innerHTML = originalButtonText;
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
