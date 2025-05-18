@@ -59,7 +59,7 @@
   </style>
 </head>
 <body>
-  <textarea id="editor" autofocus></textarea>
+  <textarea id="editor" name="editor_content" autofocus></textarea>
   <div class="footer">
     <select hx-on:change="document.getElementById('editor').style.fontFamily = this.value">
       <option value="'Courier New', monospace">Courier</option>
@@ -71,6 +71,9 @@
       <option value="16px" selected>16px</option>
       <option value="20px">20px</option>
     </select>
+    <button hx-post="/process_text" hx-include="#editor" hx-target="this" hx-swap="outerHTML">
+      Process Text
+    </button>
   </div>
 </body>
 </html>
