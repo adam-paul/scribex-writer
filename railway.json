@@ -3,7 +3,7 @@
   "build": {
     "builder": "NIXPACKS",
     "nixpacksConfig": {
-      "startCommand": "gunicorn server:app -b 0.0.0.0:$PORT"
+      "procfile": "web: gunicorn server:app -b 0.0.0.0:$PORT"
     }
   },
   "deploy": {
