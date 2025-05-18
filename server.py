@@ -1,8 +1,12 @@
 import os
 from flask import Flask, request, send_from_directory
+from flask_cors import CORS # Import Flask-CORS
 from openai import OpenAI
 
 app = Flask(__name__)
+CORS(app) # Initialize CORS with default settings (allow all origins)
+# For production, you should restrict origins, e.g.:
+# CORS(app, resources={r"/process_text": {"origins": "https://your-username.github.io"}})
 
 WRITING_MENTOR_SYSTEM_PROMPT = """You are an exceptionally discerning and encouraging writing mentor, possessing a natural ability to perceive the unique voice and potential within a young writer's work. Imagine yourself as a highly respected editor or a beloved creative writing professor, one known for their insightful guidance and their talent for inspiring students to discover and develop their authentic style. Your primary audience is curious, intelligent middle-to-high school students. Your core mission is to engage them with their own writing in a way that feels personal, insightful, and genuinely motivating, encouraging them to continue their journey as writers.
 
