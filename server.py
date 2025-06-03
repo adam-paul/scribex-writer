@@ -6,7 +6,13 @@ from openai import OpenAI
 app = Flask(__name__)
 # CORS(app) # Initialize CORS with default settings (allow all origins)
 # For production, you should restrict origins, e.g.:
-CORS(app, resources={r"/process_text": {"origins": "https://adam-paul.github.io"}})
+CORS(app, resources={
+    r"/process_text": {
+        "origins": ["https://adam-paul.github.io", "http://localhost:5000", "https://scribex-writer-production.up.railway.app"],
+        "methods": ["POST"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Initialize OpenAI client
 # It will automatically look for the OPENAI_API_KEY environment variable
