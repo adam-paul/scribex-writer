@@ -10,7 +10,14 @@ CORS(app, resources={
     r"/process_text": {
         "origins": ["https://adam-paul.github.io", "http://localhost:5000", "https://scribex-writer-production.up.railway.app"],
         "methods": ["POST"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": [
+            "Content-Type", 
+            "hx-request", 
+            "hx-trigger", 
+            "hx-trigger-name", 
+            "hx-target", 
+            "hx-current-url"
+        ]
     }
 })
 
