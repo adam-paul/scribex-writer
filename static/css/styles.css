@@ -50,6 +50,9 @@ body {
 /* Nav right section - for balance */
 .nav-right {
   flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* Project title in nav */
@@ -153,13 +156,9 @@ body {
 
 /* Save indicator */
 .save-indicator {
-  position: fixed;
-  top: 70px;
-  right: 10px;
   padding: 8px 16px;
   border-radius: 4px;
   font-size: 14px;
-  z-index: 1001;
   transition: all 0.3s ease;
   display: none; /* Hidden by default */
 }
@@ -215,6 +214,7 @@ textarea {
   right: 0;
   background-color: #eef0c3;
   padding: 10px 20px;
+  padding-right: 40px; /* Space for close button */
   border-top: 1px solid #a0a0a0;
   min-height: 30px;
   max-height: 30vh;
@@ -223,6 +223,25 @@ textarea {
   font-size: 0.9em;
   box-sizing: border-box;
   z-index: 999;
+}
+
+.llm-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: #666;
+  background: none;
+  border: none;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.llm-close:hover {
+  opacity: 1;
 }
 
 /* Dashboard styles */

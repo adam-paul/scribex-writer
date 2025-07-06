@@ -49,7 +49,8 @@ const projectSchema = {
   created: new Date().toISOString(),
   lastModified: new Date().toISOString(),
   wordCount: 0,
-  genre: 'general' // for future use
+  genre: 'general', // for future use
+  aiResponse: null // Store last AI response for this project
 };
 
 // Project management functions
@@ -104,6 +105,7 @@ function switchProject(projectId) {
   if (project) {
     localStorage.setItem('scribex-current-project', projectId);
     loadProject(project);
+    updateProjectList(); // Update UI to show new active project
   }
 }
 
@@ -112,6 +114,26 @@ function loadProject(project) {
   editor.value = project.content || '';
   updateProjectTitle(project.title);
   lastSavedContent = project.content || '';
+  
+  // Load AI response for this project
+  const llmOutput = document.getElementById('llm-output');
+  if (llmOutput) {
+    if (project.aiResponse) {
+      llmOutput.innerHTML = project.aiResponse;
+      llmOutput.style.display = 'block';
+      
+      // Add close button
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'llm-close';
+      closeBtn.innerHTML = '×';
+      closeBtn.onclick = clearAIResponse;
+      llmOutput.appendChild(closeBtn);
+    } else {
+      llmOutput.innerHTML = '';
+      llmOutput.style.display = 'none';
+    }
+  }
+  
   initSession(); // Reset session tracking - must be before updateWordCount
   updateWordCount(); // Now calculate word count after session baseline is set
 }
@@ -150,24 +172,33 @@ function openProject(projectId) {
   document.querySelector('[data-tab="editor"]').click();
 }
 
+// Clear AI response for current project
+function clearAIResponse() {
+  const currentProject = getCurrentProject();
+  currentProject.aiResponse = null;
+  saveProject(currentProject);
+  
+  const llmOutput = document.getElementById('llm-output');
+  if (llmOutput) {
+    llmOutput.innerHTML = '';
+    llmOutput.style.display = 'none';
+  }
+}
+
 // ========== AUTO-SAVE FUNCTIONALITY ==========
 let saveTimer;
 let lastSavedContent = '';
 let isSaving = false;
 
-function createSaveIndicator() {
-  const indicator = document.createElement('div');
-  indicator.id = 'save-indicator';
-  indicator.className = 'save-indicator';
-  indicator.innerHTML = '<span class="save-text">All changes saved</span>';
-  document.body.appendChild(indicator);
-  return indicator;
+function getSaveIndicator() {
+  return document.getElementById('save-indicator');
 }
 
 let saveIndicatorTimeout;
 
 function updateSaveIndicator(status) {
-  const indicator = document.getElementById('save-indicator') || createSaveIndicator();
+  const indicator = getSaveIndicator();
+  if (!indicator) return;
   const textElement = indicator.querySelector('.save-text');
   
   // Clear any existing timeout
@@ -630,6 +661,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Close modal on ESC key
+  window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('.modal').forEach(modal => {
+        if (modal.style.display === 'block') {
+          modal.style.display = 'none';
+        }
+      });
+    }
+  });
+
   // Save prompt
   if (savePromptBtn) {
     savePromptBtn.addEventListener('click', function() {
@@ -682,12 +724,28 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
 
-// Handle HTMX after swap - show/hide output div
-document.addEventListener('htmx:afterSwap', function(event) {
-  if (event.detail.target.id === 'llm-output') {
-    const outputDiv = event.detail.target;
-    outputDiv.style.display = outputDiv.innerHTML.trim() ? 'block' : 'none';
-  }
+  // Handle HTMX events for LLM output
+  document.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'llm-output') {
+      const llmOutput = evt.detail.target;
+      
+      // Save AI response to current project
+      const currentProject = getCurrentProject();
+      currentProject.aiResponse = llmOutput.textContent;
+      saveProject(currentProject);
+      
+      // Add close button if not already present
+      if (!llmOutput.querySelector('.llm-close')) {
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'llm-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = clearAIResponse;
+        llmOutput.appendChild(closeBtn);
+      }
+      
+      // Show the output
+      llmOutput.style.display = 'block';
+    }
+  });
 }); 
