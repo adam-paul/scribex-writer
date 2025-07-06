@@ -2,7 +2,7 @@
 let DEFAULT_PROMPT = '';
 
 // Load default prompt from file
-fetch('/static/prompts/default-prompt.txt')
+fetch('static/prompts/default-prompt.txt')
   .then(response => {
     if (!response.ok) {
       throw new Error(`Failed to load prompt: ${response.status} ${response.statusText}`);
@@ -20,7 +20,7 @@ fetch('/static/prompts/default-prompt.txt')
   .catch(error => {
     console.error('Failed to load default prompt:', error);
     // Show error to user - do NOT use a fallback
-    alert('Error: Failed to load default prompt file. Please check that /static/prompts/default-prompt.txt exists.');
+    alert('Error: Failed to load default prompt file. Please check that static/prompts/default-prompt.txt exists.');
     // Disable the process button since we have no valid prompt
     const processButton = document.getElementById('process-text-btn');
     if (processButton) {
