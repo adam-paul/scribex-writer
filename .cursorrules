@@ -1,0 +1,106 @@
+# Cursor Rules for Scribex Writer
+
+## CRITICAL: Error Handling Rules
+
+### NEVER IMPLEMENT SILENT FAILURES
+- **NEVER** use fallback values when external resources fail to load
+- **NEVER** catch errors and continue with hardcoded/default values
+- **NEVER** mask failures with substitute behavior
+- **ALWAYS** fail loudly and visibly when something goes wrong
+- **ALWAYS** inform the user when an error occurs
+- **ALWAYS** disable dependent functionality when prerequisites fail
+
+### Examples of FORBIDDEN patterns:
+```javascript
+// ❌ FORBIDDEN - Silent fallback
+fetch('/config.json')
+  .catch(error => {
+    config = { defaultValue: 'fallback' }; // NEVER DO THIS
+  });
+
+// ❌ FORBIDDEN - Hidden failure
+try {
+  loadCriticalResource();
+} catch (e) {
+  console.log(e); // Just logging is NOT enough
+  useDefaultResource(); // NEVER DO THIS
+}
+
+// ❌ FORBIDDEN - Fake success
+.catch(error => {
+  DEFAULT_PROMPT = 'Some hardcoded value'; // ABSOLUTELY FORBIDDEN
+});
+```
+
+### Examples of REQUIRED patterns:
+```javascript
+// ✅ REQUIRED - Visible failure
+fetch('/config.json')
+  .catch(error => {
+    alert('Failed to load configuration: ' + error.message);
+    disableApplication();
+    throw error; // Re-throw to prevent continuation
+  });
+
+// ✅ REQUIRED - User notification
+try {
+  loadCriticalResource();
+} catch (e) {
+  console.error('Critical failure:', e);
+  showErrorModal('Application cannot continue: ' + e.message);
+  disableAllFeatures();
+  throw e;
+}
+
+// ✅ REQUIRED - Proper error propagation
+.catch(error => {
+  console.error('Failed to load prompt:', error);
+  alert('Error: Cannot load required resources');
+  document.getElementById('submit-btn').disabled = true;
+  // Do NOT set any fallback values
+});
+```
+
+## General Best Practices
+
+1. **Fail Fast**: When something is wrong, stop immediately
+2. **Fail Visibly**: Users must know when something fails
+3. **Fail Honestly**: Never pretend things are working when they're not
+4. **Fail Helpfully**: Provide clear error messages with actionable information
+
+## Resource Loading
+
+When loading external resources (files, APIs, configs):
+1. Check response status explicitly
+2. Throw errors for non-OK responses
+3. Show user-facing error messages
+4. Disable dependent features
+5. NEVER use hardcoded fallbacks
+
+## Truth in Code
+
+- Code behavior must match user expectations
+- If a file is supposed to be loaded, it MUST be loaded or fail visibly
+- No invisible magic behaviors
+- No "helpful" automatic corrections
+- 2 + 2 = 4, always. Never implement code where 2 + 2 = 5.
+
+## Acceptable Error Handling
+
+Some operations may have limited error handling when:
+1. The failure is non-critical (e.g., analytics, optional features)
+2. The user is notified visually (e.g., error indicator, disabled button)
+3. The application can continue functioning without the failed component
+4. No substitute/fake data is used
+
+Example of acceptable limited handling:
+```javascript
+// ✅ OK - Non-critical failure with user notification
+try {
+  saveToLocalStorage(data);
+} catch (e) {
+  console.error('Save failed:', e);
+  showErrorIndicator('Failed to save'); // User sees the failure
+  // Application continues without pretending save succeeded
+}
+``` 

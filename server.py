@@ -40,6 +40,10 @@ def index():
 def serve_image(filename):
     return send_from_directory('img', filename)
 
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
 @app.route('/process_text', methods=['POST'])
 def process_text():
     text_content = request.form.get('editor_content')

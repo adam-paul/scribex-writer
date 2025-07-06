@@ -1,199 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Scribex</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="htmx-config" content='{"selfRequestsOnly": false}'>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%; /* For html */
-    }
-    body {
-      height: 100vh; /* For body, use viewport height */
-      display: flex;
-      flex-direction: column;
-      background-color: #f7f8d2;
-      background-image: url("img/beige-paper.png");
-      padding-bottom: 35px; /* Space for the fixed footer */
-      box-sizing: border-box; /* Ensure padding is included in height */
-    }
-    textarea {
-      width: 100%;
-      flex: 1; /* Takes up available space */
-      border: none;
-      resize: none;
-      outline: none;
-      padding: 20px 20px 0 20px;
-      /* margin-bottom: 20px; REMOVED as flex will manage space */
-      box-sizing: border-box;
-      font-family: 'Courier New', monospace;
-      font-size: 16px;
-      color: #333;
-      overflow-y: auto;
-      background-color: transparent;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(0,0,0,0.2) transparent;
-    }
-    #llm-output {
-      display: none; /* Initially hidden */
-      width: 100%;
-      background-color: #eef0c3;
-      padding: 10px;
-      border-top: 1px solid #a0a0a0;
-      min-height: 30px;
-      max-height: 30vh; /* Max height for the output area */
-      overflow-y: auto;   /* Scroll if content exceeds max-height */
-      white-space: pre-wrap;
-      font-size: 0.9em;
-      box-sizing: border-box;
-    }
-    .footer {
-      width: 100%;
-      height: 4.5vh;
-      min-height: 35px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #fcfbee;
-      border-top: 1px solid #a0a0a0;
-      gap: 10px;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      z-index: 1000; /* Ensure footer is on top */
-    }
-    select, button {
-      border-radius: 0;
-      opacity: 0.5;
-      transition: opacity 0.2s ease;
-      margin-bottom: 3px;
-      padding-bottom: 1px;
-    }
-    select:hover, button:hover {
-      opacity: 1;
-    }
-    select:focus, button:focus {
-      outline-style: solid;
-    }
-    
-    /* Prompt Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.5);
-    }
-    
-    .modal-content {
-      background-color: #fcfbee;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #a0a0a0;
-      width: 80%;
-      max-width: 800px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-sizing: border-box;
-    }
-    
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-      line-height: 1;
-    }
-    
-    .close:hover,
-    .close:focus {
-      color: black;
-      text-decoration: none;
-    }
-    
-    #prompt-textarea {
-      width: 100%;
-      height: 300px;
-      border: 1px solid #a0a0a0;
-      padding: 10px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      resize: vertical;
-      background-color: #f7f8d2;
-      box-sizing: border-box;
-    }
-    
-    .modal-buttons {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-    
-    .modal-buttons button {
-      padding: 8px 16px;
-      border: 1px solid #a0a0a0;
-      background-color: #fcfbee;
-      cursor: pointer;
-      opacity: 1;
-    }
-    
-    .modal-buttons button:hover {
-      background-color: #eef0c3;
-    }
-    
-    /* Mobile-specific styles */
-    @media (max-width: 768px) {
-      html, body {
-        width: 100%;
-        height: 100%;
-        /* overflow: hidden; Removed as it might conflict with fixed footer and content scroll */
-      }
-      body {
-        height: 100vh; /* Full viewport height */
-        padding-bottom: 40px; /* Adjust padding for mobile footer height */
-      }
-      textarea {
-        padding: 10px;
-        font-size: 14px;
-      }
-      #llm-output {
-        max-height: 25vh; /* Adjust max height for mobile */
-        font-size: 0.8em;
-      }
-      .footer {
-        min-height: 40px; /* Ensure footer is not too small */
-        gap: 5px; /* Reduce gap between items */
-      }
-      select, button {
-        font-size: 0.9em; /* Slightly smaller controls */
-      }
-      
-      .modal-content {
-        margin: 2% auto;
-        width: 95%;
-        max-height: 90vh;
-        padding: 15px;
-      }
-      
-      #prompt-textarea {
-        height: 250px;
-        font-size: 12px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-  <textarea id="editor" name="editor_content" autofocus></textarea>
-  <div id="llm-output"></div>
+  <!-- Navigation -->
+  <nav class="main-nav">
+    <!-- Project info on the left -->
+    <div class="nav-left">
+      <h3 id="current-project-title" contenteditable="true">Untitled Project</h3>
+      <button id="project-menu-btn" class="icon-btn" title="Project Menu">☰</button>
+    </div>
+    
+    <!-- Centered tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="editor">
+        <span class="tab-icon">✍️</span>
+        <span class="tab-label">Write</span>
+      </button>
+      <button class="nav-tab" data-tab="dashboard">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Dashboard</span>
+      </button>
+      <button class="nav-tab" data-tab="profile">
+        <span class="tab-icon">👤</span>
+        <span class="tab-label">Profile</span>
+      </button>
+    </div>
+    
+    <!-- Empty right side for balance -->
+    <div class="nav-right"></div>
+  </nav>
+
+  <main class="content-area">
+    <!-- Editor Tab (default active) -->
+    <div id="editor-tab" class="tab-content active">
+      <textarea id="editor" name="editor_content" autofocus></textarea>
+      <div id="llm-output"></div>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content">
+      <div class="dashboard-container">
+        <h2>Writing Dashboard</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Words</h3>
+            <p class="stat-value" id="total-words">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Projects</h3>
+            <p class="stat-value" id="total-projects">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Writing Streak</h3>
+            <p class="stat-value" id="writing-streak">0 days</p>
+          </div>
+        </div>
+        <div class="recent-projects">
+          <h3>Recent Projects</h3>
+          <div id="dashboard-project-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Tab -->
+    <div id="profile-tab" class="tab-content">
+      <div class="profile-container">
+        <h2>My Profile</h2>
+        <div class="profile-settings">
+          <h3>Writing Preferences</h3>
+          <div class="preference-group">
+            <label>Font Family:</label>
+            <select id="font-selector">
+              <option value="'Courier New', monospace">Courier</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Georgia, serif">Georgia</option>
+            </select>
+          </div>
+          <div class="preference-group">
+            <label>Font Size:</label>
+            <select id="size-selector">
+              <option value="12px">12px</option>
+              <option value="16px" selected>16px</option>
+              <option value="20px">20px</option>
+            </select>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <h3>Writing Statistics</h3>
+          <p>Your writing journey visualizations will appear here.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Project List Modal -->
+  <div id="project-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>My Projects</h3>
+      <button id="new-project-btn" class="primary-btn">+ New Project</button>
+      <div id="project-list" class="project-list">
+        <!-- Projects will be dynamically inserted here -->
+      </div>
+    </div>
+  </div>
   
   <!-- Prompt Modal -->
   <div id="prompt-modal" class="modal">
@@ -209,143 +126,41 @@
     </div>
   </div>
   
-  <div class="footer">
-    <select hx-on:change="document.getElementById('editor').style.fontFamily = this.value">
-      <option value="'Courier New', monospace">Courier</option>
-      <option value="Arial, sans-serif">Arial</option>
-      <option value="Georgia, serif">Georgia</option>
-    </select>
-    <select hx-on:change="document.getElementById('editor').style.fontSize = this.value">
-      <option value="12px">12px</option>
-      <option value="16px" selected>16px</option>
-      <option value="20px">20px</option>
-    </select>
-    <button id="edit-prompt-btn" title="Edit Writing Mentor Prompt">
-      Edit Prompt
-    </button>
-    <button id="process-text-btn" hx-post="https://scribex-writer-production.up.railway.app/process_text" hx-include="#editor" hx-target="#llm-output" hx-swap="innerHTML">
-      Process Text
-    </button>
+  <!-- Editor Footer (only visible when editor tab is active) -->
+  <div class="footer" id="editor-footer">
+    <div class="footer-section footer-buttons">
+      <button id="edit-prompt-btn" title="Edit Writing Mentor Prompt">Edit Prompt</button>
+      <button id="process-text-btn" 
+              hx-post="https://scribex-writer-production.up.railway.app/process_text" 
+              hx-include="#editor" 
+              hx-target="#llm-output" 
+              hx-swap="innerHTML">
+        Process Text
+      </button>
+    </div>
+    
+    <div class="footer-divider"></div>
+    
+    <div class="footer-section footer-stats">
+      <div class="stat-item">
+        <span class="stat-label">Words:</span>
+        <span class="stat-value" id="word-count">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Characters:</span>
+        <span class="stat-value" id="char-count">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Reading time:</span>
+        <span class="stat-value" id="reading-time">0 min</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Session:</span>
+        <span class="stat-value" id="session-words">0</span>
+      </div>
+    </div>
   </div>
 
-  <script>
-    // Default prompt
-    const DEFAULT_PROMPT = `You are an exceptionally discerning and encouraging writing mentor, possessing a natural ability to perceive the unique voice and potential within a young writer's work. Imagine yourself as a highly respected editor or a beloved creative writing professor, one known for their insightful guidance and their talent for inspiring students to discover and develop their authentic style. Your primary audience is curious, intelligent middle-to-high school students. Your core mission is to engage them with their own writing in a way that feels personal, insightful, and genuinely motivating, encouraging them to continue their journey as writers.
-
-When you encounter a student's text, approach it with curiosity and respect. Your response should be a thoughtful conversation, not a checklist of corrections.
-
-First, listen closely to their voice. What makes their writing distinctive? Reflect this back to them, using specific phrases or passages from their work to show you're truly engaging with *their* words. For example, instead of saying 'Good imagery,' you might say, 'The way you described the sunset as 'a bleeding orange' creates a vivid and even melancholic mood.'
-
-When offering suggestions for development or improvement, do so with a gentle hand. Frame your ideas as explorations or possibilities: 'You might consider how ending this sentence here could create more suspense,' or 'Have you thought about what another character might be feeling in this scene?' The goal is to empower them to make their own choices and strengthen their unique voice, not to rewrite it for them.
-
-If their writing resonates with the style, themes, or spirit of established authors—whether contemporary, classic, or historical—draw these connections. This isn't about simple comparison, but about opening doors: 'The way you build tension here reminds me a little of how [Author's Name] crafts their mystery scenes. You might find their work [Book Title, if one comes to mind] interesting because...' This can help them find literary companions and expand their reading.
-
-If a piece of writing is too brief or doesn't offer enough substance for a deep analysis, don't hesitate to say so kindly and clearly. You could say something like, 'This is an intriguing start! To really explore the ideas you're beginning to touch on here, I'd need a little more to work with. Is there more to this piece, or could you perhaps expand on this section?'
-
-Maintain a tone that is both articulate and accessible. Avoid jargon unless it's naturally woven into a sophisticated yet understandable point. Your language should be conversational, avoiding the stiffness of a textbook or the generic cheerleading of a less nuanced AI. Be economical with your words, ensuring each sentence carries weight and insight. While genuine enthusiasm is welcome, be mindful of overusing superlatives; let the specificity of your observations convey the depth of your engagement.
-
-Crucially, do not use bullet points or numbered lists in your feedback. Your response should flow like a personal letter or a thoughtful spoken critique. Avoid generic advice, robotic phrasing, or anything that feels like a canned response. You are not here to judge or to deliver a lecture, but to illuminate, encourage, and inspire the student to see the power and potential in their own writing.`;
-
-    // Load saved prompt from localStorage or use default
-    function loadPrompt() {
-      const savedPrompt = localStorage.getItem('scribex-prompt');
-      return savedPrompt || DEFAULT_PROMPT;
-    }
-
-    // Save prompt to localStorage
-    function savePrompt(prompt) {
-      localStorage.setItem('scribex-prompt', prompt);
-    }
-
-    // Modal functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const modal = document.getElementById('prompt-modal');
-      const editPromptBtn = document.getElementById('edit-prompt-btn');
-      const closeBtn = document.querySelector('.close');
-      const savePromptBtn = document.getElementById('save-prompt-btn');
-      const resetPromptBtn = document.getElementById('reset-prompt-btn');
-      const promptTextarea = document.getElementById('prompt-textarea');
-      const processButton = document.getElementById('process-text-btn');
-
-      // Load current prompt into textarea
-      promptTextarea.value = loadPrompt();
-
-      // Open modal
-      editPromptBtn.addEventListener('click', function() {
-        promptTextarea.value = loadPrompt();
-        modal.style.display = 'block';
-      });
-
-      // Close modal
-      closeBtn.addEventListener('click', function() {
-        modal.style.display = 'none';
-      });
-
-      // Close modal when clicking outside
-      window.addEventListener('click', function(event) {
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-
-      // Save prompt
-      savePromptBtn.addEventListener('click', function() {
-        const customPrompt = promptTextarea.value.trim();
-        if (customPrompt) {
-          savePrompt(customPrompt);
-          modal.style.display = 'none';
-          alert('Prompt saved successfully!');
-        } else {
-          alert('Please enter a prompt before saving.');
-        }
-      });
-
-      // Reset to default prompt
-      resetPromptBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to reset to the default prompt?')) {
-          promptTextarea.value = DEFAULT_PROMPT;
-          savePrompt(DEFAULT_PROMPT);
-          alert('Prompt reset to default.');
-        }
-      });
-
-      // Process text button functionality
-      if (processButton) {
-        const originalButtonText = processButton.innerHTML;
-
-        // Add custom prompt to HTMX request
-        processButton.addEventListener('htmx:configRequest', function(evt) {
-          const customPrompt = loadPrompt();
-          evt.detail.parameters['custom_prompt'] = customPrompt;
-        });
-
-        processButton.addEventListener('htmx:beforeRequest', function(evt) {
-          if (evt.detail.elt === this) {
-            this.disabled = true;
-            this.innerHTML = 'Processing...'; 
-          }
-        });
-
-        processButton.addEventListener('htmx:afterRequest', function(evt) {
-          if (evt.detail.elt === this) {
-            this.disabled = false;
-            this.innerHTML = originalButtonText;
-          }
-        });
-      }
-    });
-
-    // Handle HTMX after swap
-    document.addEventListener('htmx:afterSwap', function(event) {
-      if (event.detail.target.id === 'llm-output') {
-        const outputDiv = event.detail.target;
-        if (outputDiv.innerHTML.trim() !== '') {
-          outputDiv.style.display = 'block';
-        } else {
-          outputDiv.style.display = 'none';
-        }
-      }
-    });
-  </script>
+  <script src="/static/js/app.js"></script>
 </body>
 </html>
