@@ -8,7 +8,7 @@ app = Flask(__name__)
 # For production, you should restrict origins, e.g.:
 CORS(app, resources={
     r"/process_text": {
-        "origins": ["https://adam-paul.github.io", "http://localhost:5000", "https://scribex-writer-production.up.railway.app"],
+        "origins": ["https://adam-paul.github.io", "https://scribex-writer-production.up.railway.app"],
         "methods": ["POST"],
         "allow_headers": [
             "Content-Type", 
