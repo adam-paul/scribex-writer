@@ -116,10 +116,7 @@
     try {
       const customPrompt = StorageService.getCustomPrompt() || '';
       
-      // Use SvelteKit API in development, Flask in production
-      const endpoint = import.meta.env.DEV ? '/api/process-text' : '/process_text';
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/process-text', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
