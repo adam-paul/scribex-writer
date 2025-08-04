@@ -1,0 +1,528 @@
+
+
+Narrative Walk-through 
+Opening the App
+The user opens Scribex to a clean, welcoming homepage that acts as a dashboard. It displays an overview of the user’s writing projects, including completion percentages, exercise progress, and current XP/level. This screen provides access to all main sections of the app via a bottom or side navigation bar.
+The icons lead to:
+Open World Writing (a page icon): long-form student-driven projects
+
+
+Exercises (a quill or checkmark icon): AI-generated writing challenges
+
+
+Dashboard (home icon): overview of progress across projects
+
+
+Profile (user icon): personal stats and customization
+
+
+Social / Leaderboard (group/trophy icon): peer interaction and editing feedback
+
+
+The visual tone is sleek and minimal, intentionally distraction-free to keep writing at the center. Students can browse their current projects or begin something new.
+Starting or Resuming a Project
+The user clicks "New Project" or resumes an existing one. They’re prompted to choose a genre (e.g., persuasive essay, narrative, creative writing), which activates certain genre-based feedback schemas later used by the AI.
+Each project has two key components:
+Open World Writing
+
+
+Exercises, which are generated from the student's writing
+Projects can be accessed from the dashboard or via direct links within the Exercises section.
+Open World Writing Mode
+This is the creative, open-ended writing space where students do their work. When writing, the following things happen:
+
+The document auto-saves regularly.
+
+
+As the student types, AI feedback is live, flagging potential issues in grammar, flow, and clarity. These flags are highlighted inline—similar to how Google Docs suggests edits—but instead of proposing rewrites, the AI prompts with questions.
+Examples:
+“This sentence is unclear. What could you do with the verb to make the action more direct?”
+“The tone in this paragraph feels different from the rest. Why do you think that is?”
+
+
+This feedback can be temporarily hidden via a toggle at the top of the page, allowing students to focus and re-engage with the editor once they reach a stopping point.
+Positive reinforcement is also baked into this mode. The AI occasionally highlights well-structured sentences with praise like:
+“Great example of parallel structure here.”
+
+
+“This transition works smoothly—nice job!”
+These comments are brief and designed to encourage without disrupting flow.
+Entering Editor Mode
+At any time, the student can toggle Editor Mode. This activates a panel or overlay that shows all the exercises generated from their most recent writing session.
+There may be, for example, 12 exercises based on a 3-paragraph draft. These exercises are tied directly to issues the AI flagged and are categorized by the Three Layers:
+Mechanics (e.g., punctuation, sentence structure)
+Sequence (e.g., logical consistency, flow)
+Voice (e.g., audience awareness, rhythm, rhetorical power)
+
+
+ Completing Exercises
+Each exercise is interactive and designed to promote metacognitive reflection. Instead of doing the work for the student, the system asks them to think like editors.
+Examples:
+Multiple-choice comma placement tasks
+
+
+Rewrite this sentence until your “clarity score” improves
+
+
+Add a sentence to improve paragraph transitions
+
+
+Each exercise yields a score—either a percentage (for objective tasks) or a clarity/voice rating for subjective work. Students must achieve 90%+ overall on these tasks to unlock publishing.
+Exercises may be retried, and the app encourages iteration. A user who fails a clarity challenge, for example, is invited to reword the sentence and try again until they succeed.
+Publishing Work
+Once exercises are passed, the student unlocks the ability to publish their draft to a Bubble (a small social group—classroom-based, genre-based, or invite-only).
+The published version is locked and saved permanently to represent a point-in-time achievement.
+
+
+Students can continue editing to create newer drafts. If meaningful revision is made (e.g., >25% change or new exercise set complete), they may re-publish an updated version.
+
+
+If a project is deleted entirely, all its drafts are deleted. But individual published versions cannot be removed, encouraging respect for past growth.
+
+
+Social Bubbles and Peer Feedback
+After publishing, the student's draft becomes visible to others in their Bubble. Users can:
+Leave comments (anonymously or not, depending on Bubble settings)
+
+
+Complete editing exercises on each other’s drafts
+
+
+Earn XP for thoughtful feedback
+
+
+Bubbles are limited in size and can be:
+Classroom Bubbles (auto-assigned via a school code; managed by Guides)
+
+
+Public Bubbles (open, discoverable; only adults may join)
+
+
+Private Bubbles (join-by-code)
+
+
+Users can be in multiple bubbles at once (except for student users, who are limited to their classroom). Guides can moderate, set rules (e.g., disable anonymous comments), and track all student engagement.
+XP System and Progression
+Scribex uses an XP-based level system to reward:
+Writing new material
+
+
+Completing exercises
+
+
+Editing one’s own drafts
+
+
+Giving feedback to others
+XP is exponential, meaning each level takes more effort than the last. As users level up, they unlock:
+New genres/templates
+
+
+More creative autonomy
+
+
+Less intervention from the AI (i.e., fewer hand-holding prompts)
+
+
+The ability to create and manage Bubbles (for adult users)
+This structure mirrors a game-like environment and is especially motivating for younger users without compromising learning depth.
+Profiles and Customization
+Each user has a Profile page that displays:
+Their level and XP progress
+
+
+Their active and completed projects
+
+
+Draft version trees (unpublished versions only)
+
+
+Bubble memberships
+
+
+Students have limited customization (maybe a few color themes). Adult users may have expanded options.
+Privacy and Safety Features
+Students can’t join public or private Bubbles—only classroom ones.
+
+
+Anonymous commenting is visible to Guides for moderation purposes.
+
+
+No DMs, no free chat features.
+
+
+No AI-generated content. The AI only prompts, highlights, and scores.
+
+
+Version history is saved only for in-progress drafts (not published versions).
+
+
+All data is cloud-saved and compliant with privacy standards (COPPA, FERPA-ready).
+
+
+Summary: The Scribex Flow, Start to Finish
+Student logs in and views dashboard
+
+
+Starts or continues a project in Open World
+
+
+Writes freely; AI flags issues but doesn't auto-fix
+
+
+Turns on Editor Mode when ready
+
+
+Completes personalized exercises drawn from their own writing
+
+
+Passes 90% threshold → unlocks publish
+
+
+Publishes to their Bubble
+
+
+Receives peer feedback and XP
+
+
+Iterates or starts a new project
+
+
+
+
+
+Scribex: Write the Future Well
+Developer Specification Document
+ Version: MVP Spec | Platform: Web-first | Date: June 2025
+
+1. Product Philosophy
+Scribex is a writing education platform that re-centers writing as an iterative, recursive, and self-guided process. Inspired by Flower & Hayes' cognitive process model and long-term memory cue research, Scribex emphasizes:
+Iteration & Self-Editing: Feedback is formative, not prescriptive. Students improve through editing their own and others’ writing, not through static drills.
+
+
+Cued Recall Learning: Exercises are drawn from the student’s own writing, triggering stronger memory activation than isolated tasks.
+
+
+Recursive Writing: There are no artificial silos between brainstorming, drafting, or editing—students move fluidly among them.
+
+
+Peer Ecosystems: Honest, constructive peer feedback is enabled by structured bubbles and optional anonymity.
+
+
+AI-as-Guide (Not Ghostwriter): AI never writes for the student. Instead, it prompts, questions, and evolves as the user grows in mastery.
+
+
+2. User Roles
+2.1 User (Default)
+Write in open world mode
+
+
+Complete exercises
+
+
+Earn XP and level up
+
+
+Join bubbles (limited by permissions)
+
+
+Submit peer feedback
+
+
+2.2 Student (Child Account)
+Same as User
+
+
+Can only join Guide-created classroom bubbles
+
+
+Cannot join public bubbles or create new ones
+
+
+2.3 Guide (Teacher Role)
+Create classroom bubbles
+
+
+View student progress, scores, drafts
+
+
+Assign prompts/templates
+
+
+Override exercise gatekeeping if needed
+
+
+See anonymous feedback identities (for moderation)
+
+
+3. App Modules
+3.1 Dashboard
+Summary of current projects
+
+
+Completion progress, XP levels
+
+
+Navigation to:
+
+
+Open World
+Exercises
+Leaderboard / Social
+Profile
+Bubbles
+
+
+3.2 Projects
+Projects can be accessed via:
+
+
+Project overview (in dashboard)
+Open World (writing mode)
+Exercises (skills mode)
+
+
+Each project has:
+
+
+Writing drafts (versioned)
+Exercise sets (auto-generated)
+Genre (optional, affects AI feedback)
+Publishing status (draft, published, updated)
+
+
+
+4. Open World Writing
+Semi-blank, stylized writing space
+
+
+Auto-saves progress with version tracking
+
+
+AI highlights grammar/logic/clarity/tone issues as the user types (toggle ON/OFF for flow)
+
+
+Positive reinforcement comments mixed in
+
+
+Drafts remain unpublished until exercises are passed
+
+
+5. Exercises
+Auto-generated from user’s own writing
+
+
+Types:
+
+
+Accuracy (e.g., “Where should the comma go?”) → scored with % accuracy
+Abstraction (e.g., “Rewrite this sentence for clarity”) → scored with Clarity/Rhetoric % and qualitative guidance
+
+
+Completion threshold = 90% to unlock publish ability
+
+
+Students may retry until they pass
+
+
+Exercises scaffolded by level (AI becomes less directive as level increases)
+
+
+6. Publishing Logic
+Students can publish to their bubble after passing associated exercises
+
+
+Published writing:
+
+
+Remains viewable in original state (no deleting published drafts)
+Can be revised → new version can be re-published if a minimum change threshold is met
+
+
+XP awarded for publishing + receiving peer edits
+
+
+7. AI Feedback Engine
+Behavior:
+AI flags errors or stylistic issues, provides leading questions only
+
+
+Never autocompletes or rewrites for students
+
+
+Evolves across levels:
+
+
+Level 1–3: Direct cues (“Try making this sentence active…”)
+Level 4–7: Guided questions (“How could you improve the verb here?”)
+Level 8+: Minimal prompts, vague flags only
+
+
+Feedback Types:
+Mechanics (grammar, spelling, structure)
+
+
+Sequence (logic, transitions, argument validity)
+
+
+Voice (style, rhythm, tone, audience)
+
+
+Prompt Influence:
+Genres/templates cue specific types of feedback
+
+
+Examples: narrative, persuasive, descriptive
+
+
+8. Bubbles (Social System)
+8.1 Types of Bubbles
+Classroom Bubbles: Created by guides. Students are auto-enrolled via school code.
+
+
+Public Bubbles: Discoverable. Joinable by regular users.
+
+
+Private Bubbles: Invite-only, via join code.
+
+
+8.2 Rules & Controls
+Only adult users may create or join public/private bubbles
+
+
+Students may not create or join non-classroom bubbles
+
+
+Guides can define:
+
+
+Anonymity settings (on/off)
+Comment permissions
+Publishing settings
+
+
+8.3 Interaction Features
+Users can post writing to bubble
+
+
+Peer commenting (anon or named)
+
+
+Editing Exercises: Edit peer writing for XP
+
+
+Leaderboards based on editing accuracy, volume, and peer upvotes
+
+
+9. XP & Level System
+Earned through:
+
+
+Completing exercises
+Publishing original writing
+Editing self and others
+
+
+Level system:
+
+
+Exponential XP curve
+Unlocks:
+
+
+New genres/templates
+Reduced AI feedback
+Public/private bubble creation
+
+
+XP and level displayed on profile and leaderboard
+
+
+10. Profile
+Basic customization (theme switching, username)
+
+
+Display:
+
+
+XP
+Current level
+Published work (with version trees)
+Bubble memberships
+
+
+Possibly restrict visual customization for younger users
+
+
+11. Technical & Backend Notes
+11.1 Authentication
+Email/password + OAuth (Google, Apple)
+
+
+Child accounts require guardian email approval or school onboarding
+
+
+11.2 Storage
+Cloud-based document storage
+
+
+Drafts = versioned until published
+
+
+Version history not retained for published drafts
+
+
+Exercises, XP, and feedback linked to writing instance ID
+
+
+11.3 AI Integration
+External API (e.g., OpenAI) or hosted model
+
+
+Prompt tuning by:
+
+
+Genre
+User level
+Type of issue (Mechanics, Sequence, Voice)
+
+
+No content generation permitted—only diagnostic + prompting
+
+
+11.4 Publishing Controls
+Users can unpublish entire projects, not individual drafts
+
+
+Re-publishing requires meaningful revision (e.g., 25% change or completion of a new exercise set)
+
+
+12. Safety & Privacy
+Anonymity = toggleable per post (except for students)
+
+
+Guide visibility overrides for all student interactions
+
+
+No DMs, no unmoderated chat
+
+
+Compliance goals: COPPA, FERPA (if school-deployed)
+
+
+13. Future Considerations (Scalable Features)
+iOS/Android companion app
+
+
+Push notifications (for bubble activity, exercise reminders)
+
+
+Progress analytics dashboards (for guides + self-view)
+
+
+AI mentor persona (optional, personality-guided writing coach)
+
+
+Integration with LMS systems (Google Classroom, Canvas)
+
+
