@@ -5,10 +5,10 @@
     "buildCommand": "bun install && bun run build"
   },
   "deploy": {
-    "startCommand": "PORT=$PORT node build",
+    "startCommand": "PORT=$PORT bun ./build/index.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 200,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
-} 
+}
