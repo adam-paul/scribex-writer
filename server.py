@@ -1,48 +1,30 @@
 import os
-from flask import Flask, request, send_from_directory
-from flask_cors import CORS # Import Flask-CORS
+from flask import Flask, request
+from flask_cors import CORS
 from openai import OpenAI
 
 app = Flask(__name__)
-# CORS(app) # Initialize CORS with default settings (allow all origins)
-# For production, you should restrict origins, e.g.:
+
 CORS(app, resources={
     r"/process_text": {
-        "origins": ["https://adam-paul.github.io", "https://scribex-writer-production.up.railway.app"],
+        "origins": ["http://localhost:5173", "http://localhost:3000", "https://adam-paul.github.io", "https://scribex-writer-production.up.railway.app"],
         "methods": ["POST"],
-        "allow_headers": [
-            "Content-Type", 
-            "hx-request", 
-            "hx-trigger", 
-            "hx-trigger-name", 
-            "hx-target", 
-            "hx-current-url"
-        ]
+        "allow_headers": ["Content-Type"]
     }
 })
 
 # Initialize OpenAI client
-# It will automatically look for the OPENAI_API_KEY environment variable
 try:
     client = OpenAI()
     OPENAI_API_KEY_SET = True
-except Exception as e: # More specific error catching might be better
+except Exception as e:
     print(f"OpenAI API key not found or client could not be initialized: {e}")
     print("Please set the OPENAI_API_KEY environment variable.")
     client = None
     OPENAI_API_KEY_SET = False
 
-@app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/img/<path:filename>')
-def serve_image(filename):
-    return send_from_directory('img', filename)
-
-@app.route('/static/<path:path>')
-def serve_static(path):
-    return send_from_directory('static', path)
+# Note: Frontend is now served by SvelteKit
+# This Flask server only handles the AI processing endpoint
 
 @app.route('/process_text', methods=['POST'])
 def process_text():
@@ -61,14 +43,14 @@ def process_text():
     try:
         # Make the API call to OpenAI using the prompt from frontend
         completion = client.chat.completions.create(
-            model="gpt-4o", # Or your preferred model
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": custom_prompt.strip()},
                 {"role": "user", "content": text_content}
             ]
         )
         llm_response = completion.choices[0].message.content
-        return llm_response, 200 # Send LLM response back to client
+        return llm_response, 200
 
     except Exception as e:
         print(f"Error calling OpenAI API: {e}")
