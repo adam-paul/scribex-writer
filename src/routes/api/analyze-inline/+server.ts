@@ -1,61 +1,96 @@
-import { json } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+import OpenAI from 'openai';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import type { RequestHandler } from './$types';
 import type { InlineFeedback } from '$lib/models/Project';
+
+// Initialize OpenAI client
+let openai: OpenAI | null = null;
+
+try {
+  openai = new OpenAI({
+    apiKey: env.OPENAI_API_KEY,
+  });
+} catch (e) {
+  console.error('Failed to initialize OpenAI client:', e);
+}
+
+// Load the inline feedback prompt
+let INLINE_FEEDBACK_PROMPT = '';
+try {
+  INLINE_FEEDBACK_PROMPT = readFileSync(
+    join(process.cwd(), 'static/prompts/inline-feedback.md'),
+    'utf-8'
+  );
+} catch (e) {
+  console.error('Failed to load inline-feedback.md:', e);
+}
 
 export const POST: RequestHandler = async ({ request }) => {
   const { textSegment, startPosition = 0 } = await request.json();
   
-  console.log('=== Analyze Inline API ===');
-  console.log('Text segment:', textSegment);
-  console.log('Start position:', startPosition);
-  console.log('Segment length:', textSegment.length);
-  
-  // For mock feedback: Create a single feedback item at the END of the entire analyzed segment
-  const mockFeedback: InlineFeedback[] = [];
-  
-  if (textSegment.length > 0) {
-    // The feedback marker should appear at the END of all analyzed text
-    const endPosition = startPosition + textSegment.length;
-    
-    // Determine feedback type based on segment characteristics
-    let feedbackType: 'praise' | 'clarity' | 'flow' | 'tone' = 'praise';
-    let message = 'Good work on this section!';
-    
-    // Simple mock logic for varying feedback
-    if (textSegment.includes('?')) {
-      feedbackType = 'clarity';
-      message = 'Consider if this question effectively engages your reader.';
-    } else if (textSegment.includes('\n\n')) {
-      feedbackType = 'flow';
-      message = 'Nice paragraph structure! How do these ideas connect?';
-    } else if (textSegment.length > 150) {
-      feedbackType = 'tone';
-      message = 'This is a substantial section. Is the tone consistent throughout?';
-    } else if (textSegment.match(/^[A-Z]/)) {
-      feedbackType = 'praise';
-      message = 'Strong opening! Keep building on this.';
-    }
-    
-    // Create a single feedback item for the ENTIRE analyzed segment
-    mockFeedback.push({
-      id: `feedback_${Date.now()}`,
-      type: feedbackType,
-      message: message,
-      startIndex: startPosition,  // Start of analyzed segment
-      endIndex: endPosition,      // End of analyzed segment (marker appears here)
-      createdAt: new Date().toISOString(),
-      dismissed: false
-    });
-    
-    console.log(`Created feedback for positions ${startPosition} to ${endPosition}`);
-    console.log(`Feedback type: ${feedbackType}`);
-    console.log(`Message: ${message}`);
+  // Validation
+  if (!textSegment || textSegment.trim().length === 0) {
+    return json({ feedback: [] });
   }
   
-  console.log(`Returning ${mockFeedback.length} feedback item(s)`);
-  console.log('=========================');
+  if (!openai) {
+    return error(500, 'OpenAI API key not configured');
+  }
   
-  return json({
-    feedback: mockFeedback
-  });
+  if (!INLINE_FEEDBACK_PROMPT) {
+    return error(500, 'Feedback prompt not loaded');
+  }
+  
+  try {
+    // Prepare the prompt with JSON format instructions
+    const systemPrompt = INLINE_FEEDBACK_PROMPT + `
+    
+    Analyze the text and provide ONE piece of feedback for the entire segment.
+    Focus on the most important aspect that would help the student improve.
+    
+    Return your response as JSON:
+    {
+      "type": "grammar" | "clarity" | "flow" | "tone" | "praise",
+      "message": "Your brief question or observation (under 25 words)"
+    }`;
+    
+    // Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: textSegment }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 150
+    });
+    
+    const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+    
+    // Create feedback item at the END of the analyzed segment
+    const endPosition = startPosition + textSegment.length;
+    const feedback: InlineFeedback[] = [];
+    
+    if (aiResponse.type && aiResponse.message) {
+      feedback.push({
+        id: `fb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: aiResponse.type,
+        message: aiResponse.message,
+        startIndex: startPosition,
+        endIndex: endPosition,
+        createdAt: new Date().toISOString(),
+        dismissed: false
+      });
+    }
+    
+    return json({ feedback });
+    
+  } catch (e) {
+    console.error('Error calling OpenAI API:', e);
+    return error(500, `Failed to analyze text: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  }
 };

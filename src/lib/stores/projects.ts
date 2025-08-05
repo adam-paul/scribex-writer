@@ -124,12 +124,10 @@ function createProjectStore() {
     
     // Add inline feedback
     addInlineFeedback(projectId: string, feedback: InlineFeedback[]) {
-      console.log(`Adding ${feedback.length} feedback items to project ${projectId}`);
       projects.update(projectList => {
         const updated = projectList.map(p => {
           if (p.id === projectId) {
             const newFeedback = [...(p.inlineFeedback || []), ...feedback];
-            console.log(`Project now has ${newFeedback.length} total feedback items`);
             return {
               ...p,
               inlineFeedback: newFeedback
@@ -144,7 +142,6 @@ function createProjectStore() {
     
     // Update analyzed position
     updateAnalyzedPosition(projectId: string, position: number) {
-      console.log(`Updating analyzed position to ${position} for project ${projectId}`);
       projects.update(projectList => {
         const updated = projectList.map(p => {
           if (p.id === projectId) {

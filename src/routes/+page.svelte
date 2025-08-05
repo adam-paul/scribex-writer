@@ -14,7 +14,6 @@
   // Re-render markers when feedback changes
   $effect(() => {
     if ($currentProject?.inlineFeedback) {
-      console.log('Inline feedback updated:', $currentProject.inlineFeedback.length, 'items');
       // Update markers in overlay
       if (editorElement && overlayElement) {
         updateFeedbackMarkers();
@@ -107,10 +106,6 @@
     const lastSentenceEnd = currentAnalyzedPosition + lastSentenceEndInNewContent;
     
     try {
-      console.log(`Analyzing ${sentences.length} complete sentences`);
-      console.log(`Text to analyze: "${textToAnalyze}"`);
-      console.log(`Position range: ${currentAnalyzedPosition} to ${lastSentenceEnd} (length: ${textToAnalyze.length})`);
-      
       const response = await fetch('/api/analyze-inline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,15 +120,11 @@
       }
       
       const result = await response.json();
-      console.log('API response:', result);
       const { feedback } = result;
       
       // Store feedback and update position
       if (feedback && feedback.length > 0) {
-        console.log(`Storing ${feedback.length} feedback items for project ${$currentProject.id}`);
         projectStore.addInlineFeedback($currentProject.id, feedback);
-      } else {
-        console.log('No feedback returned from API');
       }
       
       // Always update position to prevent re-analyzing the same content
@@ -259,7 +250,6 @@
   
   // Handle clicks on feedback markers
   function handleMarkerClick(feedbackId: string) {
-    console.log('Clicked feedback marker:', feedbackId);
     selectedFeedbackId = feedbackId;
     showSidebar = true;
   }
@@ -275,7 +265,6 @@
         
         // If the text before cursor ends with a newline, this is a double enter (new paragraph)
         if (textBeforeCursor.endsWith('\n')) {
-          console.log('New paragraph detected, triggering immediate analysis');
           // Cancel any pending analysis and run immediately
           if (analysisTimer) clearTimeout(analysisTimer);
           // Small delay to let the enter key register
