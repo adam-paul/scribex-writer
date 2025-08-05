@@ -5,28 +5,65 @@
   import { preferences } from '$lib/stores/preferences';
   import { sessions } from '$lib/stores/sessions';
   import PromptModal from '$lib/components/PromptModal.svelte';
+  import FeedbackSidebar from '$lib/components/FeedbackSidebar.svelte';
+  import type { InlineFeedback } from '$lib/models/Project';
+  import { getCaretPosition, setCaretPosition, extractPlainText, escapeHtml } from '$lib/utils/editor';
   
   const currentProject = projectStore.currentProject;
+  
+  // Re-render markers when feedback changes
+  $effect(() => {
+    if ($currentProject?.inlineFeedback) {
+      console.log('Inline feedback updated:', $currentProject.inlineFeedback.length, 'items');
+      // Update markers in overlay
+      if (editorElement && overlayElement) {
+        updateFeedbackMarkers();
+      }
+    }
+  });
   
   let editorContent = $state('');
   let processing = $state(false);
   let saveTimer = $state<number>();
   let showPromptModal = $state(false);
   
+  // Editor element reference
+  let editorElement: HTMLDivElement;
+  let overlayElement: HTMLDivElement;
+  let isUpdatingContent = false;
+  let showSidebar = $state(false);
+  let selectedFeedbackId = $state<string | null>(null);
+  
+  // Inline analysis state
+  let analysisTimer: number | null = null;
+  
+  // Track current project ID to detect actual project changes
+  let currentProjectId = $state<string | null>(null);
+  let lastSavedContent = $state('');
+  
   // Load content and reset session when project changes
   $effect(() => {
-    if ($currentProject) {
+    if ($currentProject && $currentProject.id !== currentProjectId) {
+      currentProjectId = $currentProject.id;
       editorContent = $currentProject.content;
+      lastSavedContent = $currentProject.content; // Update last saved content too
       sessionStartWords = $currentProject.wordCount || 0;
       sessionStartTime = Date.now();
+      
+      // Update editor content if it exists
+      if (editorElement) {
+        editorElement.textContent = editorContent;
+        updateFeedbackMarkers();
+      }
     }
   });
   
   // Auto-save on content change
   $effect(() => {
-    if ($currentProject && editorContent !== $currentProject.content) {
+    if ($currentProject && editorContent !== lastSavedContent) {
       projectStore.saveStatus.set('unsaved');
       clearTimeout(saveTimer);
+      lastSavedContent = editorContent;
       saveTimer = window.setTimeout(() => {
         projectStore.updateContent($currentProject.id, editorContent);
       }, 2000);
@@ -37,6 +74,216 @@
   const wordCount = $derived(editorContent.trim().split(/\s+/).filter(w => w.length > 0).length || 0);
   const charCount = $derived(editorContent.length);
   const readingTime = $derived(Math.ceil(wordCount / 200));
+  
+  // Inline analysis trigger
+  $effect(() => {
+    if (editorContent && $currentProject) {
+      scheduleAnalysis();
+    }
+  });
+  
+  function scheduleAnalysis() {
+    if (analysisTimer) clearTimeout(analysisTimer);
+    
+    analysisTimer = setTimeout(() => {
+      analyzeNewContent();
+    }, 5000);
+  }
+  
+  async function analyzeNewContent() {
+    if (!$currentProject) return;
+    
+    const currentAnalyzedPosition = $currentProject.lastAnalyzedPosition || 0;
+    const newContent = editorContent.slice(currentAnalyzedPosition);
+    
+    // Extract only complete sentences
+    const sentences = extractCompleteSentences(newContent);
+    if (sentences.length === 0) return; // No complete sentences to analyze
+    
+    // Find the actual end position of the last complete sentence in the original text
+    const lastSentence = sentences[sentences.length - 1];
+    const lastSentenceEndInNewContent = newContent.lastIndexOf(lastSentence) + lastSentence.length;
+    const textToAnalyze = newContent.slice(0, lastSentenceEndInNewContent).trim();
+    const lastSentenceEnd = currentAnalyzedPosition + lastSentenceEndInNewContent;
+    
+    try {
+      console.log(`Analyzing ${sentences.length} complete sentences`);
+      console.log(`Text to analyze: "${textToAnalyze}"`);
+      console.log(`Position range: ${currentAnalyzedPosition} to ${lastSentenceEnd} (length: ${textToAnalyze.length})`);
+      
+      const response = await fetch('/api/analyze-inline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          textSegment: textToAnalyze,
+          startPosition: currentAnalyzedPosition 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Analysis failed: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      const { feedback } = result;
+      
+      // Store feedback and update position
+      if (feedback && feedback.length > 0) {
+        console.log(`Storing ${feedback.length} feedback items for project ${$currentProject.id}`);
+        projectStore.addInlineFeedback($currentProject.id, feedback);
+      } else {
+        console.log('No feedback returned from API');
+      }
+      
+      // Always update position to prevent re-analyzing the same content
+      projectStore.updateAnalyzedPosition($currentProject.id, lastSentenceEnd);
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+    }
+  }
+  
+  function extractCompleteSentences(text: string): string[] {
+    // Match sentences ending with . ! ? followed by space or end of string
+    const sentenceRegex = /[^.!?]+[.!?]+(?:\s+|$)/g;
+    const matches = text.match(sentenceRegex) || [];
+    
+    // Filter to ensure last sentence is complete (not mid-typing)
+    return matches.filter((sentence, index) => {
+      if (index === matches.length - 1) {
+        // Last sentence must end with punctuation and have space after or be at end
+        const trimmed = sentence.trim();
+        return /[.!?]$/.test(trimmed) && 
+               (text.endsWith(sentence) || /[.!?]\s+$/.test(sentence));
+      }
+      return true;
+    }).map(s => s.trim());
+  }
+  
+  // Handle contenteditable input
+  function handleInput() {
+    if (isUpdatingContent) return;
+    
+    const plainText = extractPlainText(editorElement);
+    editorContent = plainText;
+    
+    // Update markers after text change
+    requestAnimationFrame(() => {
+      updateFeedbackMarkers();
+    });
+  }
+  
+  // Update feedback markers in overlay
+  function updateFeedbackMarkers() {
+    if (!editorElement || !overlayElement) return;
+    
+    const feedback = $currentProject?.inlineFeedback || [];
+    const activeFeedback = feedback.filter(f => !f.dismissed);
+    
+    // Clear existing markers
+    overlayElement.innerHTML = '';
+    
+    // Sort feedback by position
+    const sortedFeedback = [...activeFeedback].sort((a, b) => a.endIndex - b.endIndex);
+    
+    for (const item of sortedFeedback) {
+      const markerPosition = getTextPositionInEditor(item.endIndex);
+      if (markerPosition) {
+        const marker = document.createElement('div');
+        marker.className = `feedback-marker ${item.type}`;
+        marker.dataset.feedbackId = item.id;
+        marker.style.position = 'absolute';
+        marker.style.left = `${markerPosition.x}px`;
+        marker.style.top = `${markerPosition.y - 12}px`; // Position above text
+        marker.innerHTML = '<span class="feedback-dot pulse"></span>';
+        marker.onclick = () => handleMarkerClick(item.id);
+        overlayElement.appendChild(marker);
+      }
+    }
+  }
+  
+  // Get position of text index in editor
+  function getTextPositionInEditor(index: number): { x: number, y: number } | null {
+    if (!editorElement) return null;
+    
+    const text = editorElement.textContent || '';
+    if (index > text.length) return null;
+    
+    const range = document.createRange();
+    const textNode = getTextNodeAtIndex(editorElement, index);
+    
+    if (!textNode.node) return null;
+    
+    try {
+      range.setStart(textNode.node, Math.min(textNode.offset, textNode.node.textContent?.length || 0));
+      range.setEnd(textNode.node, Math.min(textNode.offset, textNode.node.textContent?.length || 0));
+      
+      const rect = range.getBoundingClientRect();
+      const editorRect = editorElement.getBoundingClientRect();
+      
+      return {
+        x: rect.left - editorRect.left + editorElement.scrollLeft,
+        y: rect.top - editorRect.top + editorElement.scrollTop
+      };
+    } catch (e) {
+      console.error('Error getting text position:', e);
+      return null;
+    }
+  }
+  
+  // Helper to find text node at index
+  function getTextNodeAtIndex(element: Node, targetIndex: number): { node: Node, offset: number } {
+    let currentIndex = 0;
+    let result = { node: element, offset: 0 };
+    
+    function traverse(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const length = node.textContent?.length || 0;
+        if (currentIndex + length >= targetIndex) {
+          result = { node, offset: targetIndex - currentIndex };
+          return true;
+        }
+        currentIndex += length;
+      } else {
+        for (const child of node.childNodes) {
+          if (traverse(child)) return true;
+        }
+      }
+      return false;
+    }
+    
+    traverse(element);
+    return result;
+  }
+  
+  // Handle clicks on feedback markers
+  function handleMarkerClick(feedbackId: string) {
+    console.log('Clicked feedback marker:', feedbackId);
+    selectedFeedbackId = feedbackId;
+    showSidebar = true;
+  }
+  
+  // Handle keydown for paragraph detection
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      const selection = window.getSelection();
+      const range = selection?.getRangeAt(0);
+      
+      if (range) {
+        const textBeforeCursor = editorContent.slice(0, getCaretPosition(editorElement));
+        
+        // If the text before cursor ends with a newline, this is a double enter (new paragraph)
+        if (textBeforeCursor.endsWith('\n')) {
+          console.log('New paragraph detected, triggering immediate analysis');
+          // Cancel any pending analysis and run immediately
+          if (analysisTimer) clearTimeout(analysisTimer);
+          // Small delay to let the enter key register
+          setTimeout(() => analyzeNewContent(), 100);
+        }
+      }
+    }
+  }
   
   // Session tracking
   let sessionStartWords = $state(0);
@@ -50,6 +297,12 @@
     if ($currentProject) {
       sessionStartWords = $currentProject.wordCount || 0;
       sessionStartTime = Date.now();
+    }
+    
+    // Initialize editor content
+    if (editorElement && editorContent) {
+      editorElement.textContent = editorContent;
+      updateFeedbackMarkers();
     }
     
     // Record session on page unload
@@ -137,23 +390,73 @@
 </script>
 
 <div class="editor-container">
-  <div class="editor-content">
-    <textarea 
-      bind:value={editorContent}
-      id="editor" 
-      name="editor_content"
-      style="font-family: {$preferences.fontFamily}; font-size: {$preferences.fontSize};"
-    ></textarea>
+  <div class="main-content">
+    <div class="editor-wrapper">
+      <div class="editor-content">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div 
+          bind:this={editorElement}
+          contenteditable="true"
+          id="editor" 
+          class="rich-editor"
+          style="font-family: {$preferences.fontFamily}; font-size: {$preferences.fontSize};"
+          oninput={handleInput}
+          onkeydown={handleKeydown}
+        ></div>
+        
+        <!-- Overlay for feedback markers -->
+        <div 
+          bind:this={overlayElement}
+          class="feedback-overlay"
+          aria-hidden="true"
+        ></div>
+        
+        {#if showAIResponse}
+          <div id="llm-output">
+            {@html aiResponse}
+            <button 
+              class="llm-close" 
+              onclick={() => $currentProject && projectStore.clearAIResponse($currentProject.id)}
+            >
+              ×
+            </button>
+          </div>
+        {/if}
+      </div>
+    </div>
     
-    {#if showAIResponse}
-      <div id="llm-output">
-        {@html aiResponse}
-        <button 
-          class="llm-close" 
-          onclick={() => $currentProject && projectStore.clearAIResponse($currentProject.id)}
-        >
-          ×
-        </button>
+    <!-- Sidebar Toggle Button (always visible) -->
+    {#if $currentProject}
+      {@const feedbackCount = ($currentProject.inlineFeedback || []).filter(f => !f.dismissed).length}
+      <button 
+        class="sidebar-toggle-btn"
+        onclick={() => showSidebar = !showSidebar}
+        aria-label={showSidebar ? 'Close feedback sidebar' : 'Open feedback sidebar'}
+        title={showSidebar ? 'Close feedback' : `Show feedback (${feedbackCount} items)`}
+      >
+        {#if !showSidebar && feedbackCount > 0}
+          <span class="feedback-badge">{feedbackCount}</span>
+        {/if}
+        {#if showSidebar}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M9.5 3.5L14 8l-4.5 4.5L8 11l3-3-3-3z"/>
+          </svg>
+        {:else}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M6.5 12.5L2 8l4.5-4.5L8 5l-3 3 3 3z"/>
+          </svg>
+        {/if}
+      </button>
+    {/if}
+    
+    <!-- Sidebar -->
+    {#if $currentProject}
+      <div class="sidebar-container" class:open={showSidebar}>
+        <FeedbackSidebar 
+          feedback={$currentProject.inlineFeedback || []} 
+          isOpen={showSidebar}
+          {selectedFeedbackId}
+        />
       </div>
     {/if}
   </div>
@@ -198,6 +501,19 @@
     flex-direction: column;
   }
   
+  .main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .editor-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  
   .editor-content {
     flex: 1;
     display: flex;
@@ -206,8 +522,23 @@
     position: relative;
     overflow: hidden;
   }
+  
+  /* Feedback overlay */
+  .feedback-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  
+  .feedback-overlay :global(.feedback-marker) {
+    pointer-events: auto;
+  }
 
-  #editor {
+  #editor, .rich-editor {
     width: 100%;
     flex: 1;
     border: none;
@@ -224,6 +555,129 @@
     scrollbar-color: rgba(0,0,0,0.2) transparent;
     min-height: 0;
     line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  /* Feedback marker styles */
+  :global(.feedback-marker) {
+    cursor: pointer;
+    z-index: 100;
+  }
+  
+  :global(.feedback-dot) {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  :global(.feedback-dot:hover) {
+    transform: scale(1.5);
+  }
+  
+  :global(.feedback-marker.grammar .feedback-dot) {
+    background: var(--color-error, #ff6b6b);
+  }
+  
+  :global(.feedback-marker.clarity .feedback-dot) {
+    background: var(--color-warning, #ffd93d);
+  }
+  
+  :global(.feedback-marker.flow .feedback-dot) {
+    background: var(--color-info, #6bcf7f);
+  }
+  
+  :global(.feedback-marker.tone .feedback-dot) {
+    background: var(--color-secondary, #a29bfe);
+  }
+  
+  :global(.feedback-marker.praise .feedback-dot) {
+    background: var(--color-success, #4CAF50);
+  }
+  
+  /* Pulsing animation */
+  :global(.pulse) {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 0.7;
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+      opacity: 1;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0);
+    }
+  }
+  
+  /* Sidebar styles */
+  .sidebar-container {
+    position: relative;
+    width: 0;
+    transition: width 0.3s ease;
+    background: var(--color-bg-secondary, #f5f5f5);
+    border-left: 1px solid var(--color-border, #ddd);
+    overflow: hidden;
+  }
+  
+  .sidebar-container.open {
+    width: 350px;
+  }
+  
+  /* Sidebar toggle button - always visible */
+  .sidebar-toggle-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 48px;
+    background: var(--color-paper-accent);
+    border: 1px solid var(--color-border);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    z-index: 101;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+  }
+  
+  .sidebar-toggle-btn:hover {
+    background: var(--color-bg-hover, #e0e0e0);
+    opacity: 1;
+    width: 28px;
+  }
+  
+  .sidebar-toggle-btn svg {
+    transition: transform 0.2s ease;
+  }
+  
+  .sidebar-toggle-btn:hover svg {
+    transform: scale(1.1);
+  }
+  
+  /* Feedback count badge */
+  .feedback-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--color-error, #ff6b6b);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
 
   /* Output area */
