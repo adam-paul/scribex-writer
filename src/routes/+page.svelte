@@ -21,6 +21,17 @@
     }
   });
   
+  // Re-render markers when sidebar toggles
+  $effect(() => {
+    showSidebar; // Track sidebar state
+    // Update markers after sidebar animation completes
+    if (editorElement && overlayElement) {
+      setTimeout(() => {
+        updateFeedbackMarkers();
+      }, 350); // Match sidebar transition duration
+    }
+  });
+  
   let editorContent = $state('');
   let processing = $state(false);
   let saveTimer = $state<number>();
@@ -32,6 +43,8 @@
   let isUpdatingContent = false;
   let showSidebar = $state(false);
   let selectedFeedbackId = $state<string | null>(null);
+  let resizeObserver: ResizeObserver | null = null;
+  let resizeDebounceTimer: number | null = null;
   
   // Inline analysis state
   let analysisTimer: number | null = null;
@@ -160,6 +173,14 @@
     editorContent = plainText;
     
     // Update markers after text change
+    requestAnimationFrame(() => {
+      updateFeedbackMarkers();
+    });
+  }
+  
+  // Handle editor scroll
+  function handleEditorScroll() {
+    // Update marker positions on scroll
     requestAnimationFrame(() => {
       updateFeedbackMarkers();
     });
@@ -294,6 +315,27 @@
       updateFeedbackMarkers();
     }
     
+    // Set up ResizeObserver to watch for editor dimension changes
+    if (editorElement) {
+      resizeObserver = new ResizeObserver(() => {
+        // Debounce resize updates
+        if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+        resizeDebounceTimer = setTimeout(() => {
+          updateFeedbackMarkers();
+        }, 100);
+      });
+      resizeObserver.observe(editorElement);
+    }
+    
+    // Also watch for window resize
+    const handleWindowResize = () => {
+      if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+      resizeDebounceTimer = setTimeout(() => {
+        updateFeedbackMarkers();
+      }, 100);
+    };
+    window.addEventListener('resize', handleWindowResize);
+    
     // Record session on page unload
     const recordAndCleanup = () => {
       if ($currentProject && sessionWords > 0) {
@@ -318,6 +360,13 @@
     
     return () => {
       window.removeEventListener('beforeunload', recordAndCleanup);
+      window.removeEventListener('resize', handleWindowResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (resizeDebounceTimer) {
+        clearTimeout(resizeDebounceTimer);
+      }
     };
   });
   
@@ -391,6 +440,7 @@
           style="font-family: {$preferences.fontFamily}; font-size: {$preferences.fontSize};"
           oninput={handleInput}
           onkeydown={handleKeydown}
+          onscroll={handleEditorScroll}
         ></div>
         
         <!-- Overlay for feedback markers -->
@@ -517,10 +567,11 @@
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    overflow: hidden;
+    overflow: visible;
+    z-index: 1;
   }
   
   .feedback-overlay :global(.feedback-marker) {
