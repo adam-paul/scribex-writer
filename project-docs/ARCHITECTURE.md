@@ -2,6 +2,18 @@
 
 This document outlines the technical architecture and design decisions for the Scribex Writer project.
 
+## Core Principles
+
+### Every Line Fights for Its Life
+
+Our codebase follows a strict minimalism principle:
+- **No dead code**: Unused variables, functions, or components must be deleted
+- **No premature abstraction**: Don't create wrappers, stores, or utilities "just in case"
+- **Local over global**: Prefer component state over global stores unless truly needed
+- **Direct over indirect**: `showModal = true` beats `uiStore.openModal()`
+
+Example: We use local state for modals instead of a global UI store because the modals are only triggered from their parent components. The 40+ lines of store code provided no value over simple boolean state.
+
 ## CSS Architecture
 
 ### Philosophy

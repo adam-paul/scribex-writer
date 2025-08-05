@@ -2,13 +2,13 @@
   import { onMount, tick } from 'svelte';
   import Modal from './Modal.svelte';
   import { StorageService } from '$lib/services/storage';
-  import { uiStore } from '$lib/stores/ui';
   
   interface Props {
-    showModal?: boolean;
+    showModal: boolean;
+    onclose: () => void;
   }
   
-  let { showModal = false }: Props = $props();
+  let { showModal, onclose }: Props = $props();
   
   let promptText = $state('');
   let defaultPrompt = $state('');
@@ -43,7 +43,7 @@
     const trimmedPrompt = promptText.trim();
     if (trimmedPrompt) {
       StorageService.setCustomPrompt(trimmedPrompt);
-      uiStore.closePromptModal();
+      onclose();
       alert('Prompt saved successfully!');
     } else {
       alert('Please enter a prompt before saving.');
@@ -64,7 +64,7 @@
   }
 </script>
 
-<Modal showModal={showModal} title="Edit Writing Mentor Prompt" onclose={() => uiStore.closePromptModal()}>
+<Modal showModal={showModal} title="Edit Writing Mentor Prompt" onclose={onclose}>
   <p>Customize the system prompt that guides the AI's feedback on your writing:</p>
   
   <textarea 

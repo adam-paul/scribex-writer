@@ -2,22 +2,23 @@
   import { onMount } from 'svelte';
   import { projectStore } from '$lib/stores/projects';
   import { StorageService } from '$lib/services/storage';
-  import { uiStore } from '$lib/stores/ui';
   import { preferences } from '$lib/stores/preferences';
   import { sessions } from '$lib/stores/sessions';
+  import PromptModal from '$lib/components/PromptModal.svelte';
   
-  // Subscribe to current project
   const currentProject = projectStore.currentProject;
   
   let editorContent = $state('');
   let processing = $state(false);
-  let defaultPromptLoaded = $state(false);
   let saveTimer = $state<number>();
+  let showPromptModal = $state(false);
   
-  // Load content when project changes
+  // Load content and reset session when project changes
   $effect(() => {
     if ($currentProject) {
       editorContent = $currentProject.content;
+      sessionStartWords = $currentProject.wordCount || 0;
+      sessionStartTime = Date.now();
     }
   });
   
@@ -78,32 +79,23 @@
     };
   });
   
-  // Reset session when project changes
-  $effect(() => {
-    if ($currentProject) {
-      sessionStartWords = $currentProject.wordCount || 0;
-      sessionStartTime = Date.now();
-    }
-  });
-  
   // Show AI response if it exists
   const showAIResponse = $derived(!!$currentProject?.aiResponse);
   const aiResponse = $derived($currentProject?.aiResponse || '');
   
-  // Load default prompt on mount
+  // Load default prompt on mount if needed
   onMount(async () => {
-    try {
-      const response = await fetch('/prompts/overall-critique.md');
-      if (response.ok) {
-        const defaultPrompt = await response.text();
-        // Only set if user hasn't saved a custom prompt
-        if (!StorageService.getCustomPrompt()) {
+    // Only fetch if user hasn't saved a custom prompt
+    if (!StorageService.getCustomPrompt()) {
+      try {
+        const response = await fetch('/prompts/overall-critique.md');
+        if (response.ok) {
+          const defaultPrompt = await response.text();
           StorageService.setCustomPrompt(defaultPrompt.trim());
         }
-        defaultPromptLoaded = true;
+      } catch (error) {
+        console.error('Failed to load default prompt:', error);
       }
-    } catch (error) {
-      console.error('Failed to load default prompt:', error);
     }
   });
   
@@ -168,7 +160,7 @@
 
   <div class="footer" id="editor-footer">
   <div class="footer-section footer-buttons">
-    <button id="edit-prompt-btn" onclick={() => uiStore.openPromptModal()}>Edit Prompt</button>
+    <button id="edit-prompt-btn" onclick={() => showPromptModal = true}>Edit Prompt</button>
     <button id="process-text-btn" onclick={processText} disabled={processing}>
       {processing ? 'Processing...' : 'Process Text'}
     </button>
@@ -407,3 +399,6 @@
     }
   }
 </style>
+
+<!-- Modals -->
+<PromptModal showModal={showPromptModal} onclose={() => showPromptModal = false} />

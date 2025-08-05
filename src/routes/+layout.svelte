@@ -3,9 +3,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { projectStore } from '$lib/stores/projects';
-  import { uiStore } from '$lib/stores/ui';
   import ProjectModal from '$lib/components/ProjectModal.svelte';
-  import PromptModal from '$lib/components/PromptModal.svelte';
   
   let { children } = $props();
   
@@ -13,9 +11,8 @@
   const currentProject = projectStore.currentProject;
   const saveStatus = projectStore.saveStatus;
   
-  // Modal visibility from UI store - directly derived
-  const showProjectModal = $derived($uiStore.showProjectModal);
-  const showPromptModal = $derived($uiStore.showPromptModal);
+  // Local state for project modal
+  let showProjectModal = $state(false);
   
   onMount(() => {
     projectStore.init();
@@ -47,7 +44,7 @@
       id="project-menu-btn"
       class="icon-btn" 
       title="Project Menu"
-      onclick={() => uiStore.openProjectModal()}
+      onclick={() => showProjectModal = true}
     >
       ☰
     </button>
@@ -94,8 +91,7 @@
 </main>
 
 <!-- Modals -->
-<ProjectModal showModal={showProjectModal} />
-<PromptModal showModal={showPromptModal} />
+<ProjectModal showModal={showProjectModal} onclose={() => showProjectModal = false} />
 
 <style>
   .main-nav {
