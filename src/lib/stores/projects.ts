@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import type { Project } from '$lib/models/Project';
+import type { Project, InlineFeedback } from '$lib/models/Project';
 import { createProject, countWords } from '$lib/models/Project';
 import { StorageService } from '$lib/services/storage';
 
@@ -38,8 +38,16 @@ function createProjectStore() {
         StorageService.saveProjects([newProject]);
         StorageService.setCurrentProjectId(newProject.id);
       } else {
-        projects.set(storedProjects);
-        currentProjectId.set(storedCurrentId || storedProjects[0].id);
+        // Ensure existing projects have the new fields
+        const migratedProjects = storedProjects.map(p => ({
+          ...p,
+          inlineFeedback: p.inlineFeedback || [],
+          lastAnalyzedPosition: p.lastAnalyzedPosition || 0
+        }));
+        projects.set(migratedProjects);
+        currentProjectId.set(storedCurrentId || migratedProjects[0].id);
+        // Save migrated projects back
+        StorageService.saveProjects(migratedProjects);
       }
     },
 
@@ -109,6 +117,41 @@ function createProjectStore() {
             ? { ...p, aiResponse: null }
             : p
         );
+        StorageService.saveProjects(updated);
+        return updated;
+      });
+    },
+    
+    // Add inline feedback
+    addInlineFeedback(projectId: string, feedback: InlineFeedback[]) {
+      projects.update(projectList => {
+        const updated = projectList.map(p => {
+          if (p.id === projectId) {
+            const newFeedback = [...(p.inlineFeedback || []), ...feedback];
+            return {
+              ...p,
+              inlineFeedback: newFeedback
+            };
+          }
+          return p;
+        });
+        StorageService.saveProjects(updated);
+        return updated;
+      });
+    },
+    
+    // Update analyzed position
+    updateAnalyzedPosition(projectId: string, position: number) {
+      projects.update(projectList => {
+        const updated = projectList.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              lastAnalyzedPosition: position
+            };
+          }
+          return p;
+        });
         StorageService.saveProjects(updated);
         return updated;
       });

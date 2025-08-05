@@ -2,37 +2,30 @@
   import { tick } from 'svelte';
   
   interface Props {
-    showModal?: boolean;
-    title?: string;
-    onclose?: () => void;
+    showModal: boolean;
+    title: string;
+    onclose: () => void;
     children?: any;
   }
   
-  let { showModal = false, title = '', onclose, children }: Props = $props();
+  let { showModal, title, onclose, children }: Props = $props();
   
   let modalElement = $state<HTMLDivElement>();
   
-  function closeModal() {
-    onclose?.();
-  }
-  
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
-      closeModal();
+      onclose();
     }
   }
   
   function handleBackdropClick(e: MouseEvent) {
-    // Only close if clicking the backdrop, not the content
     if (e.target === e.currentTarget) {
-      closeModal();
+      onclose();
     }
   }
   
-  // Focus modal when it opens
   $effect(() => {
     if (showModal && modalElement) {
-      // Wait for DOM updates before focusing
       tick().then(() => {
         modalElement?.focus();
       });
@@ -47,20 +40,16 @@
     class="modal" 
     onclick={handleBackdropClick}
     onkeydown={handleKeydown}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
     tabindex="-1"
   >
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h3 id="modal-title">{title}</h3>
+        <h3>{title}</h3>
         <button 
           class="close" 
-          onclick={closeModal}
-          aria-label="Close modal"
+          onclick={onclose}
         >
           &times;
         </button>

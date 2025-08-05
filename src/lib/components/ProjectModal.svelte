@@ -1,14 +1,14 @@
 <script lang="ts">
   import Modal from './Modal.svelte';
   import { projectStore } from '$lib/stores/projects';
-  import { uiStore } from '$lib/stores/ui';
   import type { Project } from '$lib/models/Project';
   
   interface Props {
-    showModal?: boolean;
+    showModal: boolean;
+    onclose: () => void;
   }
   
-  let { showModal = false }: Props = $props();
+  let { showModal, onclose }: Props = $props();
   
   const currentProject = projectStore.currentProject;
   let projects = $state<Project[]>([]);
@@ -23,13 +23,13 @@
     const title = prompt('Enter project title:', 'Untitled Project');
     if (title) {
       projectStore.create(title);
-      uiStore.closeProjectModal();
+      onclose();
     }
   }
   
   function switchProject(projectId: string) {
     projectStore.switchTo(projectId);
-    uiStore.closeProjectModal();
+    onclose();
   }
   
   function deleteProject(e: Event, projectId: string) {
@@ -62,7 +62,7 @@
   }
 </script>
 
-<Modal showModal={showModal} title="My Projects" onclose={() => uiStore.closeProjectModal()}>
+<Modal showModal={showModal} title="My Projects" onclose={onclose}>
   <button 
     id="new-project-btn" 
     class="primary-btn" 
@@ -72,7 +72,7 @@
   </button>
   
   <div id="project-list" class="project-list">
-    {#each projects.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()) as project}
+    {#each [...projects].sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()) as project}
       <div 
         class="project-item {project.id === $currentProject?.id ? 'active' : ''}"
         onclick={() => switchProject(project.id)}
@@ -91,7 +91,6 @@
             class="icon-btn" 
             onclick={(e) => deleteProject(e, project.id)}
             title="Delete project"
-            aria-label="Delete {project.title}"
           >
             🗑️
           </button>
