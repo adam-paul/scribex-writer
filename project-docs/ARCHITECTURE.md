@@ -96,3 +96,54 @@ When migrating from global CSS to component styles:
 2. Move them to the component's `<style>` block
 3. Remove any unnecessary parent selectors (Svelte scopes for you)
 4. Ensure design tokens are used instead of hard-coded values
+
+## Package Management
+
+### Bun as Exclusive Package Manager
+
+This project uses **Bun** exclusively as the package manager and runtime. Never use npm, yarn, or other package managers.
+
+**Why Bun?**
+- **Performance**: Significantly faster than npm for installs and script execution
+- **Simplicity**: Single tool for package management, runtime, and bundling
+- **Compatibility**: Drop-in replacement for npm with better performance
+- **Modern**: Built for modern JavaScript/TypeScript development
+
+**Development Commands**:
+```bash
+# Install dependencies
+bun install
+
+# Run development server  
+bun run dev
+
+# Build for production
+bun run build
+
+# Run tests
+bun test
+
+# Run linting
+bun run lint
+
+# Type checking
+bun run check
+```
+
+**Project Setup Rules**:
+- Always use `bun install` instead of `npm install`
+- Use `bun run <script>` instead of `npm run <script>`
+- Use `bunx` instead of `npx` for running packages
+- Lock file: `bun.lock` (never `package-lock.json` or `yarn.lock`)
+
+**For Contributors**:
+If you don't have Bun installed:
+```bash
+# Install Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Verify installation
+bun --version
+```
+
+This ensures consistent, fast development experience across all contributors and deployment environments.
