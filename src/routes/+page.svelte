@@ -45,14 +45,14 @@
     // Update markers after sidebar animation completes
     if (feedbackManager && $currentProject?.inlineFeedback) {
       setTimeout(() => {
-        feedbackManager.updateMarkers($currentProject.inlineFeedback);
+        feedbackManager?.updateMarkers($currentProject.inlineFeedback!);
       }, 350); // Match sidebar transition duration
     }
   });
   
   let editorContent = $state('');
   let processing = $state(false);
-  let saveTimer = $state<number>();
+  let saveTimer = $state<ReturnType<typeof setTimeout>>();
   let showPromptModal = $state(false);
   
   // Overlay element reference
@@ -60,13 +60,13 @@
   let showSidebar = $state(false);
   let selectedFeedbackId = $state<string | null>(null);
   let resizeObserver: ResizeObserver | null = null;
-  let resizeDebounceTimer: number | null = null;
+  let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   let feedbackManager: FeedbackManager | null = null;
-  let sessionTracker: SessionTracker;
+  let sessionTracker: SessionTracker | undefined;
   let editorCore: EditorCore;
   
   // Inline analysis state
-  let analysisTimer: number | null = null;
+  let analysisTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Track current project ID to detect actual project changes
   let currentProjectId = $state<string | null>(null);
@@ -100,7 +100,7 @@
       projectStore.saveStatus.set('unsaved');
       clearTimeout(saveTimer);
       lastSavedContent = editorContent;
-      saveTimer = window.setTimeout(() => {
+      saveTimer = setTimeout(() => {
         projectStore.updateContent($currentProject.id, editorContent);
       }, 2000);
     }
