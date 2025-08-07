@@ -1,21 +1,9 @@
 import { error, json } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-import OpenAI from 'openai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { RequestHandler } from './$types';
 import type { InlineFeedback } from '$lib/models/Project';
-
-// Initialize OpenAI client
-let openai: OpenAI | null = null;
-
-try {
-  openai = new OpenAI({
-    apiKey: env.OPENAI_API_KEY,
-  });
-} catch (e) {
-  console.error('Failed to initialize OpenAI client:', e);
-}
+import { getOpenAIClient } from '$lib/utils/openai';
 
 // Load the inline feedback prompt
 let INLINE_FEEDBACK_PROMPT = '';
@@ -36,15 +24,15 @@ export const POST: RequestHandler = async ({ request }) => {
     return json({ feedback: [] });
   }
   
-  if (!openai) {
-    return error(500, 'OpenAI API key not configured');
-  }
   
   if (!INLINE_FEEDBACK_PROMPT) {
     return error(500, 'Feedback prompt not loaded');
   }
   
   try {
+    // Get OpenAI client
+    const openai = getOpenAIClient();
+    
     // Prepare the prompt with JSON format instructions
     const systemPrompt = INLINE_FEEDBACK_PROMPT + `
     
@@ -59,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
     
     // Call OpenAI
     const completion = await openai.chat.completions.create({
-      model: env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: textSegment }

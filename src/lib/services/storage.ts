@@ -1,13 +1,11 @@
 import type { Project } from '$lib/models/Project';
+import { STORAGE_KEYS } from '$lib/constants/storage';
 
 export class StorageService {
-  private static readonly PROJECTS_KEY = 'scribex-projects';
-  private static readonly CURRENT_PROJECT_KEY = 'scribex-current-project';
-  private static readonly PROMPT_KEY = 'scribex-prompt';
 
   static getAllProjects(): Project[] {
     try {
-      const stored = localStorage.getItem(this.PROJECTS_KEY);
+      const stored = localStorage.getItem(STORAGE_KEYS.PROJECTS);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -17,25 +15,25 @@ export class StorageService {
 
   static saveProjects(projects: Project[]): void {
     try {
-      localStorage.setItem(this.PROJECTS_KEY, JSON.stringify(projects));
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
     } catch (error) {
       console.error('Failed to save projects:', error);
     }
   }
 
   static getCurrentProjectId(): string | null {
-    return localStorage.getItem(this.CURRENT_PROJECT_KEY);
+    return localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT);
   }
 
   static setCurrentProjectId(id: string): void {
-    localStorage.setItem(this.CURRENT_PROJECT_KEY, id);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, id);
   }
 
   static getCustomPrompt(): string | null {
-    return localStorage.getItem(this.PROMPT_KEY);
+    return localStorage.getItem(STORAGE_KEYS.PROMPT);
   }
 
   static setCustomPrompt(prompt: string): void {
-    localStorage.setItem(this.PROMPT_KEY, prompt);
+    localStorage.setItem(STORAGE_KEYS.PROMPT, prompt);
   }
 }

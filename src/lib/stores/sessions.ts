@@ -1,4 +1,5 @@
 import { writable, get } from 'svelte/store';
+import { STORAGE_KEYS } from '$lib/constants/storage';
 
 interface WritingSession {
   date: string;
@@ -12,7 +13,7 @@ function createSessionsStore() {
 
   // Load sessions from localStorage on init
   function loadSessions() {
-    const stored = localStorage.getItem('scribex-sessions');
+    const stored = localStorage.getItem(STORAGE_KEYS.SESSIONS);
     if (stored) {
       set(JSON.parse(stored));
     }
@@ -25,7 +26,7 @@ function createSessionsStore() {
     const recentSessions = sessions.filter(s => 
       new Date(s.date).getTime() > thirtyDaysAgo
     );
-    localStorage.setItem('scribex-sessions', JSON.stringify(recentSessions));
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(recentSessions));
   }
 
   return {

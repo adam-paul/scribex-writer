@@ -1,18 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-import OpenAI from 'openai';
 import type { RequestHandler } from './$types';
-
-// Initialize OpenAI client
-let openai: OpenAI | null = null;
-
-try {
-  openai = new OpenAI({
-    apiKey: env.OPENAI_API_KEY,
-  });
-} catch (e) {
-  console.error('Failed to initialize OpenAI client:', e);
-}
+import { getOpenAIClient } from '$lib/utils/openai';
 
 export const POST: RequestHandler = async ({ request }) => {
   // Parse the request body
@@ -29,11 +17,10 @@ export const POST: RequestHandler = async ({ request }) => {
     return error(400, 'No system prompt received.');
   }
 
-  if (!openai) {
-    return error(500, 'OpenAI API key not configured on the server.');
-  }
-
   try {
+    // Get OpenAI client
+    const openai = getOpenAIClient();
+    
     // Make the API call to OpenAI
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',

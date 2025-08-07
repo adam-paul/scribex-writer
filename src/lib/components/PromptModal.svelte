@@ -113,18 +113,4 @@
     margin-top: 1rem;
   }
 
-  .primary-btn {
-    background-color: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 10px var(--space-lg);
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-  }
-
-  .primary-btn:hover {
-    background-color: #45a049;
-  }
 </style>
